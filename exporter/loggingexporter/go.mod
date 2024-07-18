@@ -9,7 +9,7 @@ require (
 	go.opentelemetry.io/collector/config/configtelemetry v0.105.0
 	go.opentelemetry.io/collector/confmap v0.105.0
 	go.opentelemetry.io/collector/exporter v0.105.0
-	go.opentelemetry.io/collector/pdata v1.12.0
+	go.opentelemetry.io/collector/pdata v1.13.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.27.0
 )
@@ -40,10 +40,10 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	go.opentelemetry.io/collector v0.105.0 // indirect
-	go.opentelemetry.io/collector/config/configretry v1.12.0 // indirect
+	go.opentelemetry.io/collector/config/configretry v1.13.0 // indirect
 	go.opentelemetry.io/collector/consumer v0.105.0 // indirect
 	go.opentelemetry.io/collector/extension v0.105.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.12.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.13.0 // indirect
 	go.opentelemetry.io/collector/internal/globalgates v0.105.0 // indirect
 	go.opentelemetry.io/collector/receiver v0.105.0 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect

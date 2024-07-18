@@ -16,8 +16,8 @@ require (
 	go.opentelemetry.io/collector/component v0.105.0
 	go.opentelemetry.io/collector/confmap v0.105.0
 	go.opentelemetry.io/collector/consumer v0.105.0
-	go.opentelemetry.io/collector/featuregate v1.12.0
-	go.opentelemetry.io/collector/pdata v1.12.0
+	go.opentelemetry.io/collector/featuregate v1.13.0
+	go.opentelemetry.io/collector/pdata v1.13.0
 	go.opentelemetry.io/collector/pdata/testdata v0.105.0
 	go.opentelemetry.io/contrib/config v0.8.0
 	go.uber.org/goleak v1.3.0
