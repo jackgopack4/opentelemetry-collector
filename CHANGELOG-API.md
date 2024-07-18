@@ -7,6 +7,15 @@ If you are looking for user-facing changes, check out [CHANGELOG.md](./CHANGELOG
 
 <!-- next version -->
 
+## v1.13.0/v0.106.0
+
+### 🛑 Breaking changes 🛑
+
+- `mdatagen`: Remove WithAttributes option from the telemetry builder constructor. (#10608)
+  Attribute sets for async instruments now can be set as options to callback setters and async instruments initializers.
+  This allows each async instrument to have its own attribute set.
+  
+
 ## v1.12.0/v0.105.0
 
 ### 🛑 Breaking changes 🛑
