@@ -418,7 +418,7 @@ multimod-prerelease: $(MULTIMOD)
 	$(MAKE) gotidy
 
 COMMIT?=HEAD
-REMOTE?=git@github.com:open-telemetry/opentelemetry-collector.git
+REMOTE?=git@github.com:jackgopack4/opentelemetry-collector.git
 .PHONY: push-tags
 push-tags: $(MULTIMOD)
 	$(MULTIMOD) verify

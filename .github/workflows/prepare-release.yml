@@ -50,7 +50,7 @@ jobs:
 
   # Releasing opentelemetry-collector
   prepare-release:
-    needs: 
+    needs:
       - validate-versions
     runs-on: ubuntu-latest
     steps:
@@ -91,8 +91,8 @@ jobs:
       #   - Run make prepare-release PREVIOUS_VERSION=0.52.0 RELEASE_CANDIDATE=0.53.0 MODSET=beta
       - name: Prepare release for core
         env:
-          GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
-          REPO: open-telemetry/opentelemetry-collector
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: jackgopack4/opentelemetry-collector
           CANDIDATE_BETA: ${{ inputs.candidate-beta }}
           CANDIDATE_STABLE: ${{ inputs.candidate-stable }}
           CURRENT_BETA: ${{ inputs.current-beta }}
@@ -108,5 +108,5 @@ jobs:
           CANDIDATE_STABLE: ${{ inputs.candidate-stable }}
           CURRENT_BETA: ${{ inputs.current-beta }}
           CURRENT_STABLE: ${{ inputs.current-stable }}
-          REPO: open-telemetry/opentelemetry-collector
+          REPO: jackgopack4/opentelemetry-collector
         run: ./.github/workflows/scripts/release-create-tracking-issue.sh
