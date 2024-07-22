@@ -67,7 +67,7 @@ jobs:
       - name: Check blockers in contrib
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: jackgopack4/opentelemetry-collector-contrib
+          REPO: open-telemetry/opentelemetry-collector-contrib
         run: ./.github/workflows/scripts/release-check-blockers.sh
       # Make sure the current main branch build successfully passes (Core).
       - name: Check build status in core
@@ -79,7 +79,7 @@ jobs:
       - name: Check build status in contrib
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: jackgopack4/opentelemetry-collector-contrib
+          REPO: open-telemetry/opentelemetry-collector-contrib
         run: ./.github/workflows/scripts/release-check-build-status.sh
       - name: Setup Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
