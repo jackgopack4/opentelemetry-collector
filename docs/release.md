@@ -46,9 +46,7 @@ It is possible that a core approver isn't a contrib approver. In that case, the 
    
    If you set your remote using `https` you need to include `REMOTE=https://github.com/open-telemetry/opentelemetry-collector.git` in each command. Wait for the new tag build to pass successfully.
 
-6. The release script for the collector builder should create a new GitHub release for the builder. This is a separate release from the core, but we might join them in the future if it makes sense.
-
-7. A new `v0.85.0` release should be automatically created on Github by now. Edit it and use the contents from the CHANGELOG.md and CHANGELOG-API.md as the release's description.
+6. A new `v0.85.0` source code release should be automatically created on Github by now. Edit it and use the contents from the CHANGELOG.md and CHANGELOG-API.md as the release's description.
 
 ## Releasing opentelemetry-collector-contrib
 
@@ -73,14 +71,14 @@ It is possible that a core approver isn't a contrib approver. In that case, the 
 5. A new `v0.85.0` release should be automatically created on Github by now. Edit it and use the contents from the CHANGELOG.md as the release's description.
 
 ## Producing the artifacts
-
+//TODO: decide process for triggering builder release
 The last step of the release process creates artifacts for the new version of the collector and publishes images to Dockerhub. The steps in this portion of the release are done in the [opentelemetry-collector-releases](https://github.com/open-telemetry/opentelemetry-collector-releases) repo.
 
-1. Update the `./distribution/**/manifest.yaml` files to include the new release version.
+1. Update the `./distributions/**/manifest.yaml` files to include the new release version.
 
 2. Update the builder version in `OTELCOL_BUILDER_VERSION` to the new release in the `Makefile`. While this might not be strictly necessary for every release, this is a good practice.
 
-3. Create a pull request with the change and ensure the build completes successfully. See [example](https://github.com/open-telemetry/opentelemetry-collector-releases/pull/71).
+3. Create a pull request with the change and ensure the build completes successfully. See [example](https://github.com/open-telemetry/opentelemetry-collector-releases/pull/71). This pull request will also initiate and release the opentelemetry collector builder (ocb) binaries in a separate release; this is required to use the newest ocb binary to build the collector distributions below.
    -  🛑 **Do not move forward until this PR is merged.** 🛑
 
 4. Check out the commit created by merging the PR and tag with the new release version by running the `make push-tags TAG=v0.85.0` command. If you set your remote using `https` you need to include `REMOTE=https://github.com/open-telemetry/opentelemetry-collector-releases.git` in each command. Wait for the new tag build to pass successfully.
