@@ -2,6 +2,7 @@ before:
   hooks:
     - go mod download
 monorepo:
+  tag_prefix: cmd/builder
   dir: cmd/builder
 builds:
   - flags:
