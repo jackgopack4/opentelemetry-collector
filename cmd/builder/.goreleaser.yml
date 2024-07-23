@@ -26,7 +26,7 @@ builds:
     binary: ocb
 release:
   github:
-    owner: jackgopack4
+    owner: open-telemetry
     name: opentelemetry-collector-releases
   header: |
     ### Images and binaries here: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/{{ .Tag }}
