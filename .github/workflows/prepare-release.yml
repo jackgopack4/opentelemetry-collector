@@ -50,7 +50,7 @@ jobs:
 
   # Releasing opentelemetry-collector
   prepare-release:
-    needs:
+    needs: 
       - validate-versions
     runs-on: ubuntu-latest
     steps:
