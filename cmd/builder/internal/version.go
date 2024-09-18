@@ -12,7 +12,6 @@ import (
 
 var (
 	version = ""
-	date    = "unknown"
 )
 
 // binVersion returns the version of the binary.
