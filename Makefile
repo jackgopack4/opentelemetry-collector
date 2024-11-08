@@ -301,6 +301,7 @@ check-contrib:
 		-replace go.opentelemetry.io/collector/exporter/otlphttpexporter=$(CURDIR)/exporter/otlphttpexporter  \
 		-replace go.opentelemetry.io/collector/extension=$(CURDIR)/extension  \
 		-replace go.opentelemetry.io/collector/extension/auth=$(CURDIR)/extension/auth  \
+		-replace go.opentelemetry.io/collector/extension/auth/authtest=$(CURDIR)/extension/auth/authtest  \
 		-replace go.opentelemetry.io/collector/extension/experimental/storage=$(CURDIR)/extension/experimental/storage  \
 		-replace go.opentelemetry.io/collector/extension/extensioncapabilities=$(CURDIR)/extension/extensioncapabilities  \
 		-replace go.opentelemetry.io/collector/extension/memorylimiterextension=$(CURDIR)/extension/memorylimiterextension  \
@@ -379,6 +380,7 @@ restore-contrib:
 		-dropreplace go.opentelemetry.io/collector/exporter/otlphttpexporter  \
 		-dropreplace go.opentelemetry.io/collector/extension  \
 		-dropreplace go.opentelemetry.io/collector/extension/auth  \
+		-dropreplace go.opentelemetry.io/collector/extension/authtest  \
 		-dropreplace go.opentelemetry.io/collector/extension/memorylimiterextension  \
 		-dropreplace go.opentelemetry.io/collector/extension/zpagesextension  \
 		-dropreplace go.opentelemetry.io/collector/featuregate  \

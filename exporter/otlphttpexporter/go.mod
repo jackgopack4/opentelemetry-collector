@@ -1,6 +1,6 @@
 module go.opentelemetry.io/collector/exporter/otlphttpexporter
 
-go 1.22.0
+go 1.22.8
 
 require (
 	github.com/stretchr/testify v1.9.0
@@ -103,6 +103,8 @@ replace go.opentelemetry.io/collector/exporter => ../
 replace go.opentelemetry.io/collector/extension => ../../extension
 
 replace go.opentelemetry.io/collector/extension/auth => ../../extension/auth
+
+replace go.opentelemetry.io/collector/extension/auth/authtest => ../../extension/auth/authtest
 
 replace go.opentelemetry.io/collector/extension/experimental/storage => ../../extension/experimental/storage
 

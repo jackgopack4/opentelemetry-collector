@@ -1,6 +1,6 @@
 module go.opentelemetry.io/collector/config/confighttp
 
-go 1.22.0
+go 1.22.8
 
 require (
 	github.com/golang/snappy v0.0.4
@@ -17,6 +17,7 @@ require (
 	go.opentelemetry.io/collector/config/configtls v1.19.0
 	go.opentelemetry.io/collector/config/internal v0.113.0
 	go.opentelemetry.io/collector/extension/auth v0.113.0
+	go.opentelemetry.io/collector/extension/auth/authtest v0.113.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.56.0
 	go.opentelemetry.io/otel v1.31.0
 	go.opentelemetry.io/otel/metric v1.31.0
@@ -63,6 +64,8 @@ replace go.opentelemetry.io/collector/config/internal => ../internal
 replace go.opentelemetry.io/collector/extension => ../../extension
 
 replace go.opentelemetry.io/collector/extension/auth => ../../extension/auth
+
+replace go.opentelemetry.io/collector/extension/auth/authtest => ../../extension/auth/authtest
 
 replace go.opentelemetry.io/collector/pdata => ../../pdata
 

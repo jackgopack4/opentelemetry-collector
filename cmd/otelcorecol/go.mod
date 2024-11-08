@@ -2,9 +2,7 @@
 
 module go.opentelemetry.io/collector/cmd/otelcorecol
 
-go 1.22.0
-
-toolchain go1.22.8
+go 1.22.8
 
 require (
 	go.opentelemetry.io/collector/component v0.113.0
@@ -234,6 +232,8 @@ replace go.opentelemetry.io/collector/exporter/otlphttpexporter => ../../exporte
 replace go.opentelemetry.io/collector/extension => ../../extension
 
 replace go.opentelemetry.io/collector/extension/auth => ../../extension/auth
+
+replace go.opentelemetry.io/collector/extension/auth/authtest => ../../extension/auth/authtest
 
 replace go.opentelemetry.io/collector/extension/experimental/storage => ../../extension/experimental/storage
 
