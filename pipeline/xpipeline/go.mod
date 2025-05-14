@@ -2,6 +2,6 @@ module go.opentelemetry.io/collector/pipeline/xpipeline
 
 go 1.23.0
 
-require go.opentelemetry.io/collector/pipeline v0.126.1
+require go.opentelemetry.io/collector/pipeline v0.126.2
 
 replace go.opentelemetry.io/collector/pipeline => ../
