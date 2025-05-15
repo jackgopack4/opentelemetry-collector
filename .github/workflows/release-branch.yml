@@ -6,6 +6,10 @@ on:
       release-series:
         description: 'Release series (e.g., v0.85.x). If blank (i.e. bugfix release), uses most recent release/v* branch'
         required: false
+      push-tags:
+        description: 'Push tags to the remote repository'
+        required: false
+        default: 'false'
 
 jobs:
   release-branch:
@@ -22,6 +26,17 @@ jobs:
         uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
           go-version: 1.23.9
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6.3.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+          trust_level: 4
 
       - name: Setup Git config
         run: |
@@ -66,3 +81,27 @@ jobs:
         env:
           UPSTREAM_REMOTE_NAME: "origin"
           MAIN_BRANCH_NAME: "main"
+
+      - name: Display tag pushing instructions
+        run: |
+          echo "==================== INSTRUCTIONS FOR TAGGING ===================="
+          echo "The release branch has been created/updated successfully."
+          echo "You can now push tags using one of the following commands:"
+          echo ""
+          echo "For beta modules:"
+          echo "  make push-tags MODSET=beta"
+          echo ""
+          echo "For stable modules (if there were changes since last release):"
+          echo "  make push-tags MODSET=stable"
+          echo ""
+          echo "Or you can push tags directly in this workflow by checking the"
+          echo "push tags button in the options of this workflow."
+          echo "=================================================================="
+
+      - name: Push beta tags
+        if: ${{ inputs.push-tags == 'true' }}
+        run: make push-tags MODSET=beta
+          
+      - name: Push stable tags
+        if: ${{ inputs.push-tags == 'true' }}
+        run: make push-tags MODSET=stable
