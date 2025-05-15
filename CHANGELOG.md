@@ -7,6 +7,18 @@ If you are looking for developer-facing changes, check out [CHANGELOG-API.md](./
 
 <!-- next version -->
 
+## v1.33.0/v0.127.0
+
+### 💡 Enhancements 💡
+
+- `ci`: add an item to changelog for test v0.127.0 release (#8)
+
+<!-- previous-version -->
+
+## v1.32.1/v0.126.1
+
+<!-- previous-version -->
+
 ## v1.32.0/v0.126.0
 
 ### 🛑 Breaking changes 🛑

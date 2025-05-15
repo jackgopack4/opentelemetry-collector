@@ -7,6 +7,18 @@ If you are looking for user-facing changes, check out [CHANGELOG.md](./CHANGELOG
 
 <!-- next version -->
 
+## v1.33.0/v0.127.0
+
+<!-- previous-version -->
+
+## v1.32.1/v0.126.1
+
+### 💡 Enhancements 💡
+
+- `confmap`: Support running Unmarshal hooks on nil values. (#12981)
+
+<!-- previous-version -->
+
 ## v1.32.0/v0.126.0
 
 ### 🚩 Deprecations 🚩
