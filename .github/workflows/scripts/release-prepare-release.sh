@@ -39,7 +39,7 @@ if [ "${CANDIDATE_BETA}" != "" ]; then
     COMMANDS+="
 - make prepare-release PREVIOUS_VERSION=${CURRENT_BETA_ESCAPED} RELEASE_CANDIDATE=${CANDIDATE_BETA} MODSET=beta"
 fi
-git push --set-upstream jackgopack4 "${BRANCH}"
+git push --set-upstream origin "${BRANCH}"
 
 # Use OpenTelemetryBot account to create PR, allowing workflows to run
 # The title must match the checks in check-merge-freeze.yml
