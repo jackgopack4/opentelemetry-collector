@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/bin/bash -ex
+#
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
 
 # --- Configuration ---
 RELEASE_SERIES="$1" # e.g., v0.85.x
