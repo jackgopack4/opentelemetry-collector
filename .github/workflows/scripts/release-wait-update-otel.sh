@@ -63,14 +63,14 @@ WORKFLOW_NAME="update-otel.yaml"
 log_info "Checking status of update-otel workflow in $CONTRIB_REPO..."
 
 # Check if update-otel workflow is currently running
-RUNNING_WORKFLOWS=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --status in_progress --json id,status 2>/dev/null || echo "[]")
+RUNNING_WORKFLOWS=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --status in_progress --json databaseId,status 2>/dev/null || echo "[]")
 RUNNING_COUNT=$(echo "$RUNNING_WORKFLOWS" | jq length)
 
 if [[ "$RUNNING_COUNT" -gt 0 ]]; then
     log_info "Update-otel workflow is currently running ($RUNNING_COUNT workflow(s))"
     
     # Wait for all running workflows to complete
-    echo "$RUNNING_WORKFLOWS" | jq -r '.[].id' | while read -r run_id; do
+    echo "$RUNNING_WORKFLOWS" | jq -r '.[].databaseId' | while read -r run_id; do
         log_info "Waiting for workflow run $run_id to complete..."
         if ! gh run watch --repo "$CONTRIB_REPO" "$run_id" --exit-status; then
             log_error "Workflow run $run_id failed"
@@ -78,12 +78,12 @@ if [[ "$RUNNING_COUNT" -gt 0 ]]; then
         fi
     done
     
-    LATEST_RUN_ID=$(echo "$RUNNING_WORKFLOWS" | jq -r '.[0].id')
+    LATEST_RUN_ID=$(echo "$RUNNING_WORKFLOWS" | jq -r '.[0].databaseId')
 else
     log_info "No update-otel workflow is currently running"
     
     # Check the status of the most recent run
-    LATEST_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json id,conclusion,status 2>/dev/null || echo "[]")
+    LATEST_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json databaseId,conclusion,status 2>/dev/null || echo "[]")
     LATEST_RUN_COUNT=$(echo "$LATEST_RUN" | jq length)
     
     if [[ "$LATEST_RUN_COUNT" -eq 0 ]]; then
@@ -97,8 +97,8 @@ else
             sleep 30
             
             # Get the latest run ID
-            LATEST_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json id,conclusion,status)
-            LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].id')
+            LATEST_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json databaseId,conclusion,status)
+            LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].databaseId')
             
             # Wait for completion
             log_info "Waiting for workflow run $LATEST_RUN_ID to complete..."
@@ -111,7 +111,7 @@ else
             exit 1
         fi
     else
-        LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].id')
+        LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].databaseId')
         LATEST_CONCLUSION=$(echo "$LATEST_RUN" | jq -r '.[0].conclusion')
         LATEST_STATUS=$(echo "$LATEST_RUN" | jq -r '.[0].status')
         
@@ -130,8 +130,8 @@ else
                     sleep 30
                     
                     # Get the latest run ID
-                    LATEST_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json id,conclusion,status)
-                    LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].id')
+                    LATEST_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json databaseId,conclusion,status)
+                    LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].databaseId')
                     
                     # Wait for completion
                     log_info "Waiting for workflow run $LATEST_RUN_ID to complete..."
@@ -153,9 +153,9 @@ fi
 
 # Final verification
 log_info "Verifying final status of update-otel workflow..."
-FINAL_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json id,conclusion,status)
+FINAL_RUN=$(gh run list --repo "$CONTRIB_REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json databaseId,conclusion,status)
 FINAL_CONCLUSION=$(echo "$FINAL_RUN" | jq -r '.[0].conclusion')
-FINAL_RUN_ID=$(echo "$FINAL_RUN" | jq -r '.[0].id')
+FINAL_RUN_ID=$(echo "$FINAL_RUN" | jq -r '.[0].databaseId')
 
 if [[ "$FINAL_CONCLUSION" == "success" ]]; then
     log_info "✅ Update-otel workflow completed successfully (run $FINAL_RUN_ID)"
