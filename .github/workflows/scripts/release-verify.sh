@@ -71,7 +71,7 @@ if ! gh auth status >/dev/null 2>&1; then
     exit 1
 fi
 
-REPO="open-telemetry/opentelemetry-collector"
+REPO="jackgopack4/opentelemetry-collector"
 BETA_TAG="v$VERSION"
 STABLE_TAG=""
 if [[ -n "$STABLE_VERSION" ]]; then

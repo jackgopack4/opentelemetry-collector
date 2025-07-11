@@ -33,4 +33,4 @@ jobs:
       - run: ./.github/workflows/scripts/check-merge-freeze.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: open-telemetry/opentelemetry-collector
+          REPO: jackgopack4/opentelemetry-collector

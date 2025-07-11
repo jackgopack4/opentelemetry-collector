@@ -57,7 +57,7 @@ if ! gh auth status >/dev/null 2>&1; then
     exit 1
 fi
 
-CONTRIB_REPO="open-telemetry/opentelemetry-collector-contrib"
+CONTRIB_REPO="jackgopack4/opentelemetry-collector-contrib"
 WORKFLOW_NAME="update-otel.yaml"
 
 log_info "Checking status of update-otel workflow in $CONTRIB_REPO..."

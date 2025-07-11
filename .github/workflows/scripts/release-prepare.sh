@@ -52,7 +52,7 @@ if ! gh auth status >/dev/null 2>&1; then
     exit 1
 fi
 
-REPO="open-telemetry/opentelemetry-collector"
+REPO="jackgopack4/opentelemetry-collector"
 WORKFLOW_NAME="prepare-release.yml"
 
 log_info "Triggering prepare-release workflow for version $VERSION"

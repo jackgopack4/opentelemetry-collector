@@ -74,7 +74,7 @@ fi
 
 # Check for release blockers in core repository
 log_info "Checking for release blockers in opentelemetry-collector..."
-BLOCKERS=$(gh issue list --repo open-telemetry/opentelemetry-collector --label "release:blocker" --state open --json number,title 2>/dev/null || echo "[]")
+BLOCKERS=$(gh issue list --repo jackgopack4/opentelemetry-collector --label "release:blocker" --state open --json number,title 2>/dev/null || echo "[]")
 BLOCKER_COUNT=$(echo "$BLOCKERS" | jq length)
 
 if [[ "$BLOCKER_COUNT" -gt 0 ]]; then
@@ -85,7 +85,7 @@ fi
 
 # Check for release blockers in contrib repository
 log_info "Checking for release blockers in opentelemetry-collector-contrib..."
-CONTRIB_BLOCKERS=$(gh issue list --repo open-telemetry/opentelemetry-collector-contrib --label "release:blocker" --state open --json number,title 2>/dev/null || echo "[]")
+CONTRIB_BLOCKERS=$(gh issue list --repo jackgopack4/opentelemetry-collector-contrib --label "release:blocker" --state open --json number,title 2>/dev/null || echo "[]")
 CONTRIB_BLOCKER_COUNT=$(echo "$CONTRIB_BLOCKERS" | jq length)
 
 if [[ "$CONTRIB_BLOCKER_COUNT" -gt 0 ]]; then
@@ -96,7 +96,7 @@ fi
 
 # Check for release blockers in releases repository
 log_info "Checking for release blockers in opentelemetry-collector-releases..."
-RELEASES_BLOCKERS=$(gh issue list --repo open-telemetry/opentelemetry-collector-releases --label "release:blocker" --state open --json number,title 2>/dev/null || echo "[]")
+RELEASES_BLOCKERS=$(gh issue list --repo jackgopack4/opentelemetry-collector-releases --label "release:blocker" --state open --json number,title 2>/dev/null || echo "[]")
 RELEASES_BLOCKER_COUNT=$(echo "$RELEASES_BLOCKERS" | jq length)
 
 if [[ "$RELEASES_BLOCKER_COUNT" -gt 0 ]]; then
@@ -122,7 +122,7 @@ fi
 if [[ -n "$STABLE_VERSION" ]]; then
     log_info "Checking for stable module changes..."
     if command -v make >/dev/null 2>&1; then
-        PREVIOUS_STABLE_VERSION=$(gh release list --repo open-telemetry/opentelemetry-collector --json tagName,isLatest | jq -r '.[] | select(.tagName | startswith("v1.")) | .tagName' | head -1 | sed 's/^v//')
+        PREVIOUS_STABLE_VERSION=$(gh release list --repo jackgopack4/opentelemetry-collector --json tagName,isLatest | jq -r '.[] | select(.tagName | startswith("v1.")) | .tagName' | head -1 | sed 's/^v//')
         if [[ -n "$PREVIOUS_STABLE_VERSION" ]]; then
             log_info "Previous stable version: $PREVIOUS_STABLE_VERSION"
             if make check-changes PREVIOUS_VERSION="v$PREVIOUS_STABLE_VERSION" MODSET=stable 2>/dev/null; then
@@ -140,7 +140,7 @@ if [[ -n "$STABLE_VERSION" ]]; then
 fi
 
 # Check if release already exists
-if gh release view "v$VERSION" --repo open-telemetry/opentelemetry-collector >/dev/null 2>&1; then
+if gh release view "v$VERSION" --repo jackgopack4/opentelemetry-collector >/dev/null 2>&1; then
     log_error "Release v$VERSION already exists"
     exit 1
 fi

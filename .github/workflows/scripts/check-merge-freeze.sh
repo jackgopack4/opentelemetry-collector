@@ -7,7 +7,7 @@
 BLOCKERS=$( gh pr list -A opentelemetrybot -S "[chore] Prepare release" --json url -q '.[].url' -R "${REPO}" )
 
 # Check for [chore] Update core dependencies PRs in opentelemetry-collector-contrib
-CONTRIB_REPO="open-telemetry/opentelemetry-collector-contrib"
+CONTRIB_REPO="jackgopack4/opentelemetry-collector-contrib"
 CONTRIB_BLOCKERS=$( gh pr list -A opentelemetrybot -S "[chore] Update core dependencies" --json url -q '.[].url' -R "${CONTRIB_REPO}" )
 
 # Combine both blockers
