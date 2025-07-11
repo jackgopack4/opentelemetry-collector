@@ -166,7 +166,7 @@ if [[ "$FINAL_CONCLUSION" == "success" ]]; then
     
     # Check if a PR was created
     log_info "Checking if update-otel PR was created..."
-    RECENT_PRS=$(gh pr list --repo "$CONTRIB_REPO" --author app/github-actions --search "update core" --limit 1 --json number,title,url 2>/dev/null || echo "[]")
+    RECENT_PRS=$(gh pr list --repo "$CONTRIB_REPO" --search "[chore] Update core dependencies" --limit 1 --json number,title,url 2>/dev/null || echo "[]")
     PR_COUNT=$(echo "$RECENT_PRS" | jq length)
     
     if [[ "$PR_COUNT" -gt 0 ]]; then

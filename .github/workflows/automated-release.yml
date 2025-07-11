@@ -3,13 +3,21 @@ name: 'Automated Release - OpenTelemetry Collector Core'
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Release version (without v prefix, e.g., 0.85.0)'
+      candidate_beta:
+        description: 'Beta candidate version (without v prefix, e.g., 0.130.0)'
         required: true
         type: string
-      stable_version:
-        description: 'Stable version (without v prefix, leave empty to skip stable release)'
-        required: false
+      candidate_stable:
+        description: 'Stable candidate version (without v prefix, e.g., 1.36.0)'
+        required: true
+        type: string
+      current_beta:
+        description: 'Current beta version (without v prefix, e.g., 0.129.0)'
+        required: true
+        type: string
+      current_stable:
+        description: 'Current stable version (without v prefix, e.g., 1.35.0)'
+        required: true
         type: string
       dry_run:
         description: 'Run in dry-run mode (no tags/releases created)'
@@ -27,8 +35,10 @@ jobs:
   validate-prerequisites:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ inputs.version }}
-      stable_version: ${{ inputs.stable_version }}
+      candidate_beta: ${{ inputs.candidate_beta }}
+      candidate_stable: ${{ inputs.candidate_stable }}
+      current_beta: ${{ inputs.current_beta }}
+      current_stable: ${{ inputs.current_stable }}
       release_branch: release/v${{ steps.extract-major-minor.outputs.major_minor }}.x
     steps:
       - name: Checkout repository
@@ -40,18 +50,13 @@ jobs:
       - name: Extract major.minor version
         id: extract-major-minor
         run: |
-          VERSION="${{ inputs.version }}"
+          VERSION="${{ inputs.candidate_beta }}"
           MAJOR_MINOR="${VERSION%.*}"
           echo "major_minor=$MAJOR_MINOR" >> $GITHUB_OUTPUT
 
       - name: Run release validation script
         run: |
-          STABLE_ARG=""
-          if [[ -n "${{ inputs.stable_version }}" ]]; then
-            STABLE_ARG="${{ inputs.stable_version }}"
-          fi
-          
-          ./.github/workflows/scripts/release-validate.sh "${{ inputs.version }}" "$STABLE_ARG"
+          ./.github/workflows/scripts/release-validate.sh "${{ inputs.candidate_beta }}" "${{ inputs.candidate_stable }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -97,12 +102,7 @@ jobs:
 
       - name: Run prepare-release orchestration
         run: |
-          STABLE_ARG=""
-          if [[ -n "${{ inputs.stable_version }}" ]]; then
-            STABLE_ARG="${{ inputs.stable_version }}"
-          fi
-          
-          ./.github/workflows/scripts/release-prepare.sh "${{ inputs.version }}" "$STABLE_ARG"
+          ./.github/workflows/scripts/release-prepare.sh "${{ inputs.candidate_beta }}" "${{ inputs.candidate_stable }}" "${{ inputs.current_beta }}" "${{ inputs.current_stable }}"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
@@ -132,10 +132,7 @@ jobs:
 
       - name: Push release tags
         run: |
-          TAG_ARGS="${{ inputs.version }}"
-          if [[ -n "${{ inputs.stable_version }}" ]]; then
-            TAG_ARGS="$TAG_ARGS --stable-version=${{ inputs.stable_version }}"
-          fi
+          TAG_ARGS="${{ inputs.candidate_beta }} --stable-version=${{ inputs.candidate_stable }}"
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then
             TAG_ARGS="$TAG_ARGS --dry-run"
           fi
@@ -165,10 +162,7 @@ jobs:
 
       - name: Run release verification
         run: |
-          VERIFY_ARGS="${{ inputs.version }}"
-          if [[ -n "${{ inputs.stable_version }}" ]]; then
-            VERIFY_ARGS="$VERIFY_ARGS --stable-version=${{ inputs.stable_version }}"
-          fi
+          VERIFY_ARGS="${{ inputs.candidate_beta }} --stable-version=${{ inputs.candidate_stable }}"
           
           ./.github/workflows/scripts/release-verify.sh $VERIFY_ARGS
         env:
@@ -183,10 +177,10 @@ jobs:
         run: |
           if [[ "${{ needs.verify-release.result }}" == "success" || "${{ inputs.dry_run }}" == "true" ]]; then
             if [[ "${{ inputs.dry_run }}" == "true" ]]; then
-              echo "🧪 Dry run completed successfully for version ${{ needs.validate-prerequisites.outputs.version }}"
+              echo "🧪 Dry run completed successfully for beta ${{ needs.validate-prerequisites.outputs.candidate_beta }} and stable ${{ needs.validate-prerequisites.outputs.candidate_stable }}"
               echo "No actual release was created"
             else
-              echo "✅ Release v${{ needs.validate-prerequisites.outputs.version }} completed successfully"
+              echo "✅ Release beta v${{ needs.validate-prerequisites.outputs.candidate_beta }} and stable v${{ needs.validate-prerequisites.outputs.candidate_stable }} completed successfully"
               echo "Release verification passed"
             fi
             echo ""
@@ -196,7 +190,7 @@ jobs:
             echo "3. Verify Docker images are built correctly"
             echo "4. Announce release to community"
           else
-            echo "❌ Release v${{ needs.validate-prerequisites.outputs.version }} failed"
+            echo "❌ Release beta v${{ needs.validate-prerequisites.outputs.candidate_beta }} and stable v${{ needs.validate-prerequisites.outputs.candidate_stable }} failed"
             echo "Check the logs above for details"
             echo ""
             echo "Manual intervention required:"

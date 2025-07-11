@@ -1,12 +1,14 @@
 #!/bin/bash
 
 # Script to orchestrate the prepare-release workflow and wait for PR merge
-# Usage: ./release-prepare.sh <beta_version> <stable_version>
+# Usage: ./release-prepare.sh <beta_version> <stable_version> <current_beta> <current_stable>
 
 set -euo pipefail
 
 BETA_VERSION="${1:-}"
 STABLE_VERSION="${2:-}"
+CURRENT_BETA="${3:-}"
+CURRENT_STABLE="${4:-}"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -27,12 +29,14 @@ log_error() {
 }
 
 usage() {
-    echo "Usage: $0 <beta_version> <stable_version>"
-    echo "Example: $0 0.130.0 1.36.0"
+    echo "Usage: $0 <beta_version> <stable_version> <current_beta> <current_stable>"
+    echo "Example: $0 0.130.0 1.36.0 0.129.0 1.35.0"
     echo ""
     echo "Arguments:"
-    echo "  beta_version   Beta release version without 'v' prefix (required, e.g. 0.130.0)"
-    echo "  stable_version Stable release version without 'v' prefix (required, e.g. 1.36.0)"
+    echo "  beta_version   Beta candidate version without 'v' prefix (required, e.g. 0.130.0)"
+    echo "  stable_version Stable candidate version without 'v' prefix (required, e.g. 1.36.0)"
+    echo "  current_beta   Current beta version without 'v' prefix (required, e.g. 0.129.0)"
+    echo "  current_stable Current stable version without 'v' prefix (required, e.g. 1.35.0)"
     echo ""
     echo "Note: Both beta and stable versions are released simultaneously"
     exit 1
@@ -46,6 +50,16 @@ fi
 
 if [[ -z "$STABLE_VERSION" ]]; then
     log_error "Stable version is required"
+    usage
+fi
+
+if [[ -z "$CURRENT_BETA" ]]; then
+    log_error "Current beta version is required"
+    usage
+fi
+
+if [[ -z "$CURRENT_STABLE" ]]; then
+    log_error "Current stable version is required"
     usage
 fi
 
@@ -63,16 +77,7 @@ REPO="jackgopack4/opentelemetry-collector"
 WORKFLOW_NAME="prepare-release.yml"
 
 log_info "Triggering prepare-release workflow for beta version $BETA_VERSION and stable version $STABLE_VERSION"
-
-# Determine current versions from git tags
-log_info "Determining current versions from git tags..."
-
-# Get the latest beta version (0.x.x)
-CURRENT_BETA=$(git tag -l "v0.*" --sort=-version:refname | head -1 | sed 's/^v//' || echo "0.128.0")
 log_info "Current beta version: $CURRENT_BETA"
-
-# Get the latest stable version (1.x.x or higher)
-CURRENT_STABLE=$(git tag -l "v[1-9]*" --sort=-version:refname | head -1 | sed 's/^v//' || echo "1.35.0")
 log_info "Current stable version: $CURRENT_STABLE"
 
 # Build the workflow dispatch command - releasing both beta and stable simultaneously
