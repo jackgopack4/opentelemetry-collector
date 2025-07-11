@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Script to orchestrate the prepare-release workflow and wait for PR merge
-# Usage: ./release-prepare.sh <version> [stable_version]
+# Usage: ./release-prepare.sh <beta_version> <stable_version>
 
 set -euo pipefail
 
-VERSION="${1:-}"
+BETA_VERSION="${1:-}"
 STABLE_VERSION="${2:-}"
 
 # Color codes for output
@@ -27,18 +27,25 @@ log_error() {
 }
 
 usage() {
-    echo "Usage: $0 <version> [stable_version]"
-    echo "Example: $0 0.85.0 1.2.0"
+    echo "Usage: $0 <beta_version> <stable_version>"
+    echo "Example: $0 0.130.0 1.36.0"
     echo ""
     echo "Arguments:"
-    echo "  version        Release version without 'v' prefix (required)"
-    echo "  stable_version Stable version without 'v' prefix (optional)"
+    echo "  beta_version   Beta release version without 'v' prefix (required, e.g. 0.130.0)"
+    echo "  stable_version Stable release version without 'v' prefix (required, e.g. 1.36.0)"
+    echo ""
+    echo "Note: Both beta and stable versions are released simultaneously"
     exit 1
 }
 
 # Validate arguments
-if [[ -z "$VERSION" ]]; then
-    log_error "Version is required"
+if [[ -z "$BETA_VERSION" ]]; then
+    log_error "Beta version is required"
+    usage
+fi
+
+if [[ -z "$STABLE_VERSION" ]]; then
+    log_error "Stable version is required"
     usage
 fi
 
@@ -55,16 +62,35 @@ fi
 REPO="jackgopack4/opentelemetry-collector"
 WORKFLOW_NAME="prepare-release.yml"
 
-log_info "Triggering prepare-release workflow for version $VERSION"
-if [[ -n "$STABLE_VERSION" ]]; then
-    log_info "Stable version: $STABLE_VERSION"
+log_info "Triggering prepare-release workflow for beta version $BETA_VERSION and stable version $STABLE_VERSION"
+
+# Determine current versions from git tags
+log_info "Determining current versions from git tags..."
+
+# Get the latest beta version (0.x.x)
+CURRENT_BETA=$(git tag -l "v0.*" --sort=-version:refname | head -1 | sed 's/^v//' || echo "0.128.0")
+log_info "Current beta version: $CURRENT_BETA"
+
+# Get the latest stable version (1.x.x or higher)
+CURRENT_STABLE=$(git tag -l "v[1-9]*" --sort=-version:refname | head -1 | sed 's/^v//' || echo "1.35.0")
+log_info "Current stable version: $CURRENT_STABLE"
+
+# Build the workflow dispatch command - releasing both beta and stable simultaneously
+WORKFLOW_CMD="gh workflow run --repo $REPO $WORKFLOW_NAME --field current-beta=$CURRENT_BETA --field current-stable=$CURRENT_STABLE"
+
+# BETA_VERSION is the beta version (0.x.x)
+WORKFLOW_CMD="$WORKFLOW_CMD --field candidate-beta=$BETA_VERSION"
+log_info "Setting candidate-beta to: $BETA_VERSION"
+
+# STABLE_VERSION is required for simultaneous release
+if [[ -z "$STABLE_VERSION" ]]; then
+    log_error "Stable version is required for simultaneous release"
+    log_error "Usage: $0 $BETA_VERSION <stable_version>"
+    exit 1
 fi
 
-# Build the workflow dispatch command
-WORKFLOW_CMD="gh workflow run --repo $REPO $WORKFLOW_NAME --field release_candidate=$VERSION"
-if [[ -n "$STABLE_VERSION" ]]; then
-    WORKFLOW_CMD="$WORKFLOW_CMD --field stable_version=$STABLE_VERSION"
-fi
+WORKFLOW_CMD="$WORKFLOW_CMD --field candidate-stable=$STABLE_VERSION"
+log_info "Setting candidate-stable to: $STABLE_VERSION"
 
 # Trigger the workflow
 log_info "Executing: $WORKFLOW_CMD"
@@ -78,7 +104,7 @@ log_info "Waiting for prepare-release workflow to start..."
 sleep 30
 
 # Get the latest workflow run
-LATEST_RUN=$(gh run list --repo "$REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json id,conclusion,status)
+LATEST_RUN=$(gh run list --repo "$REPO" --workflow "$WORKFLOW_NAME" --limit 1 --json databaseId,conclusion,status)
 LATEST_RUN_COUNT=$(echo "$LATEST_RUN" | jq length)
 
 if [[ "$LATEST_RUN_COUNT" -eq 0 ]]; then
@@ -86,7 +112,7 @@ if [[ "$LATEST_RUN_COUNT" -eq 0 ]]; then
     exit 1
 fi
 
-LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].id')
+LATEST_RUN_ID=$(echo "$LATEST_RUN" | jq -r '.[0].databaseId')
 LATEST_STATUS=$(echo "$LATEST_RUN" | jq -r '.[0].status')
 
 log_info "Found workflow run: $LATEST_RUN_ID (status: $LATEST_STATUS)"

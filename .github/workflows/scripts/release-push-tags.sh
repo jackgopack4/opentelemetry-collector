@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script to push release tags for beta and stable module sets
-# Usage: ./release-push-tags.sh <version> [--stable-version=<stable_version>] [--dry-run]
+# Script to push release tags for beta and stable module sets simultaneously
+# Usage: ./release-push-tags.sh <beta_version> --stable-version=<stable_version> [--dry-run]
 
 set -euo pipefail
 
@@ -28,13 +28,15 @@ log_error() {
 }
 
 usage() {
-    echo "Usage: $0 <version> [--stable-version=<stable_version>] [--dry-run]"
-    echo "Example: $0 0.85.0 --stable-version=1.2.0"
+    echo "Usage: $0 <beta_version> --stable-version=<stable_version> [--dry-run]"
+    echo "Example: $0 0.130.0 --stable-version=1.36.0"
     echo ""
     echo "Arguments:"
-    echo "  version                   Release version without 'v' prefix (required)"
-    echo "  --stable-version=VERSION  Stable version without 'v' prefix (optional)"
+    echo "  beta_version              Beta release version without 'v' prefix (required, e.g. 0.130.0)"
+    echo "  --stable-version=VERSION  Stable release version without 'v' prefix (required, e.g. 1.36.0)"
     echo "  --dry-run                Run in dry-run mode (no tags pushed)"
+    echo ""
+    echo "Note: Both beta and stable versions are released simultaneously"
     exit 1
 }
 
@@ -62,7 +64,13 @@ done
 
 # Validate arguments
 if [[ -z "$VERSION" ]]; then
-    log_error "Version is required"
+    log_error "Beta version is required"
+    usage
+fi
+
+if [[ -z "$STABLE_VERSION" ]]; then
+    log_error "Stable version is required"
+    log_error "Use: $0 $VERSION --stable-version=<stable_version>"
     usage
 fi
 
@@ -185,26 +193,21 @@ log_info "✅ Beta tags pushed successfully"
 log_info "Waiting for release-branch workflow to be triggered by beta tags..."
 sleep 30
 
-# Check if stable version should be released
-if [[ -n "$STABLE_VERSION" ]]; then
-    log_info "Checking for existing stable tags for version $STABLE_VERSION..."
-    STABLE_TAG_PREFIX="v$STABLE_VERSION"
-    if check_tag_exists "$STABLE_TAG_PREFIX"; then
-        log_error "Stable tag $STABLE_TAG_PREFIX already exists"
-        exit 1
-    fi
-    
-    # Push stable tags
-    log_info "Pushing stable tags for version $STABLE_VERSION..."
-    if ! push_tags_with_retry "stable" "$STABLE_VERSION"; then
-        log_error "Failed to push stable tags"
-        exit 1
-    fi
-    
-    log_info "✅ Stable tags pushed successfully"
-else
-    log_info "No stable version specified, skipping stable tag push"
+# Push stable tags (always required for simultaneous release)
+log_info "Checking for existing stable tags for version $STABLE_VERSION..."
+STABLE_TAG_PREFIX="v$STABLE_VERSION"
+if check_tag_exists "$STABLE_TAG_PREFIX"; then
+    log_error "Stable tag $STABLE_TAG_PREFIX already exists"
+    exit 1
 fi
+
+log_info "Pushing stable tags for version $STABLE_VERSION..."
+if ! push_tags_with_retry "stable" "$STABLE_VERSION"; then
+    log_error "Failed to push stable tags"
+    exit 1
+fi
+
+log_info "✅ Stable tags pushed successfully"
 
 # Wait for release branch creation (triggered by beta tags)
 RELEASE_BRANCH="release/v${VERSION%.*}.x"
@@ -240,7 +243,7 @@ BUILD_WAIT_INTERVAL=60
 
 while [[ $BUILD_WAIT_ELAPSED -lt $BUILD_WAIT_TIMEOUT ]]; do
     # Check for running workflows triggered by tags
-    RUNNING_BUILDS=$(gh run list --event push --json id,status,conclusion | jq -r '.[] | select(.status == "in_progress") | .id')
+    RUNNING_BUILDS=$(gh run list --event push --json databaseId,status,conclusion | jq -r '.[] | select(.status == "in_progress") | .databaseId')
     
     if [[ -z "$RUNNING_BUILDS" ]]; then
         log_info "✅ All tag-triggered builds completed"
@@ -261,7 +264,7 @@ fi
 
 # Final verification - check that all builds passed
 log_info "Verifying that all tag-triggered builds passed..."
-FAILED_BUILDS=$(gh run list --event push --limit 10 --json id,status,conclusion | jq -r '.[] | select(.status == "completed" and .conclusion != "success") | .id')
+FAILED_BUILDS=$(gh run list --event push --limit 10 --json databaseId,status,conclusion | jq -r '.[] | select(.status == "completed" and .conclusion != "success") | .databaseId')
 
 if [[ -n "$FAILED_BUILDS" ]]; then
     log_error "Some tag-triggered builds failed:"
@@ -282,9 +285,7 @@ log_info "✅ All tag-triggered builds passed successfully"
 log_info "🎉 Tag pushing completed successfully!"
 log_info "Summary:"
 log_info "  Beta version: $VERSION"
-if [[ -n "$STABLE_VERSION" ]]; then
-    log_info "  Stable version: $STABLE_VERSION"
-fi
+log_info "  Stable version: $STABLE_VERSION"
 log_info "  Release branch: $RELEASE_BRANCH"
 log_info "  All builds: Passed"
 
