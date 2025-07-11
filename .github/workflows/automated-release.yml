@@ -1,0 +1,211 @@
+name: 'Automated Release - OpenTelemetry Collector Core'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (without v prefix, e.g., 0.85.0)'
+        required: true
+        type: string
+      stable_version:
+        description: 'Stable version (without v prefix, leave empty to skip stable release)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Run in dry-run mode (no tags/releases created)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  checks: read
+
+jobs:
+  validate-prerequisites:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ inputs.version }}
+      stable_version: ${{ inputs.stable_version }}
+      release_branch: release/v${{ steps.extract-major-minor.outputs.major_minor }}.x
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract major.minor version
+        id: extract-major-minor
+        run: |
+          VERSION="${{ inputs.version }}"
+          MAJOR_MINOR="${VERSION%.*}"
+          echo "major_minor=$MAJOR_MINOR" >> $GITHUB_OUTPUT
+
+      - name: Run release validation script
+        run: |
+          STABLE_ARG=""
+          if [[ -n "${{ inputs.stable_version }}" ]]; then
+            STABLE_ARG="${{ inputs.stable_version }}"
+          fi
+          
+          ./.github/workflows/scripts/release-validate.sh "${{ inputs.version }}" "$STABLE_ARG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  wait-for-update-otel:
+    runs-on: ubuntu-latest
+    needs: validate-prerequisites
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Wait for or trigger update-otel workflow
+        run: |
+          ./.github/workflows/scripts/release-wait-update-otel.sh --trigger-if-needed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  prepare-release:
+    runs-on: ubuntu-latest
+    needs: [validate-prerequisites, wait-for-update-otel]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: '1.23'
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6.3.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+
+      - name: Run prepare-release orchestration
+        run: |
+          STABLE_ARG=""
+          if [[ -n "${{ inputs.stable_version }}" ]]; then
+            STABLE_ARG="${{ inputs.stable_version }}"
+          fi
+          
+          ./.github/workflows/scripts/release-prepare.sh "${{ inputs.version }}" "$STABLE_ARG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  push-tags:
+    runs-on: ubuntu-latest
+    needs: [validate-prerequisites, prepare-release]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: '1.23'
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6.3.0
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+
+      - name: Push release tags
+        run: |
+          TAG_ARGS="${{ inputs.version }}"
+          if [[ -n "${{ inputs.stable_version }}" ]]; then
+            TAG_ARGS="$TAG_ARGS --stable-version=${{ inputs.stable_version }}"
+          fi
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            TAG_ARGS="$TAG_ARGS --dry-run"
+          fi
+          
+          ./.github/workflows/scripts/release-push-tags.sh $TAG_ARGS
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  verify-release:
+    runs-on: ubuntu-latest
+    needs: [validate-prerequisites, push-tags]
+    if: inputs.dry_run != true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: '1.23'
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run release verification
+        run: |
+          VERIFY_ARGS="${{ inputs.version }}"
+          if [[ -n "${{ inputs.stable_version }}" ]]; then
+            VERIFY_ARGS="$VERIFY_ARGS --stable-version=${{ inputs.stable_version }}"
+          fi
+          
+          ./.github/workflows/scripts/release-verify.sh $VERIFY_ARGS
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  post-release-notification:
+    runs-on: ubuntu-latest
+    needs: [validate-prerequisites, verify-release]
+    if: always()
+    steps:
+      - name: Notify release status
+        run: |
+          if [[ "${{ needs.verify-release.result }}" == "success" || "${{ inputs.dry_run }}" == "true" ]]; then
+            if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+              echo "🧪 Dry run completed successfully for version ${{ needs.validate-prerequisites.outputs.version }}"
+              echo "No actual release was created"
+            else
+              echo "✅ Release v${{ needs.validate-prerequisites.outputs.version }} completed successfully"
+              echo "Release verification passed"
+            fi
+            echo ""
+            echo "Next steps:"
+            echo "1. Proceed with opentelemetry-collector-contrib release"
+            echo "2. Update opentelemetry-collector-releases artifacts"
+            echo "3. Verify Docker images are built correctly"
+            echo "4. Announce release to community"
+          else
+            echo "❌ Release v${{ needs.validate-prerequisites.outputs.version }} failed"
+            echo "Check the logs above for details"
+            echo ""
+            echo "Manual intervention required:"
+            echo "1. Review failed steps in the workflow"
+            echo "2. Use individual scripts for debugging:"
+            echo "   - ./.github/workflows/scripts/release-validate.sh"
+            echo "   - ./.github/workflows/scripts/release-wait-update-otel.sh"
+            echo "   - ./.github/workflows/scripts/release-prepare.sh"
+            echo "   - ./.github/workflows/scripts/release-push-tags.sh"
+            echo "   - ./.github/workflows/scripts/release-verify.sh"
+            echo "3. Contact release manager or maintainers"
+          fi
