@@ -69,7 +69,7 @@ jobs:
         run: |
           ./.github/workflows/scripts/release-wait-update-otel.sh --trigger-if-needed
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   prepare-release:
     runs-on: ubuntu-latest
@@ -104,7 +104,7 @@ jobs:
           
           ./.github/workflows/scripts/release-prepare.sh "${{ inputs.version }}" "$STABLE_ARG"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   push-tags:
     runs-on: ubuntu-latest
@@ -142,7 +142,7 @@ jobs:
           
           ./.github/workflows/scripts/release-push-tags.sh $TAG_ARGS
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   verify-release:
     runs-on: ubuntu-latest
@@ -172,7 +172,7 @@ jobs:
           
           ./.github/workflows/scripts/release-verify.sh $VERIFY_ARGS
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   post-release-notification:
     runs-on: ubuntu-latest
