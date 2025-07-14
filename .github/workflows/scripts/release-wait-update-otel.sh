@@ -179,7 +179,10 @@ if [[ "$FINAL_CONCLUSION" == "success" ]]; then
         # Note: The PR needs to be merged before proceeding with core release
         log_warn "⚠️  The update-otel PR must be merged before proceeding with the core release"
     else
-        log_info "No update-otel PR found (may have been merged already or not needed)"
+        log_error "❌ No update-otel PR found after successful workflow run"
+        log_error "A PR should have been created to update core dependencies in the contrib repository"
+        log_error "Please investigate the workflow run and ensure a PR is created and merged before proceeding"
+        exit 1
     fi
 else
     log_error "❌ Update-otel workflow failed with conclusion: $FINAL_CONCLUSION"
