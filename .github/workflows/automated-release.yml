@@ -1,0 +1,146 @@
+name: Automation - Automated Release (Steps 2-7)
+
+on:
+  workflow_dispatch:
+    inputs:
+      current-beta:
+        description: 'Current beta version (e.g., 0.127.0). Do not include a leading `v`.'
+        required: true
+        type: string
+      
+      candidate-beta:
+        description: 'New beta version to release (e.g., 0.128.0). Do not include a leading `v`.'
+        required: true
+        type: string
+      
+      current-stable:
+        description: 'Current stable version (e.g., 1.4.0). Do not include a leading `v`. Leave empty if not releasing stable.'
+        required: false
+        type: string
+      
+      candidate-stable:
+        description: 'New stable version to release (e.g., 1.5.0). Do not include a leading `v`. Leave empty if not releasing stable.'
+        required: false
+        type: string
+      
+      skip-stable-check:
+        description: 'Skip checking if stable modules need to be released'
+        required: false
+        type: boolean
+        default: false
+
+permissions: read-all
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    outputs:
+      release-stable: ${{ steps.validate.outputs.release-stable }}
+      stable-has-changes: ${{ steps.check-stable.outputs.has-changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: 1.23.10
+      
+      - name: Validate inputs
+        id: validate
+        run: |
+          # Check if both stable current and candidate are provided or neither
+          if [[ -n "${{ inputs.current-stable }}" && -z "${{ inputs.candidate-stable }}" ]] || [[ -z "${{ inputs.current-stable }}" && -n "${{ inputs.candidate-stable }}" ]]; then
+            echo "Error: Both current-stable and candidate-stable must be provided together or left empty"
+            exit 1
+          fi
+          
+          # Set output for whether we should release stable
+          if [[ -n "${{ inputs.current-stable }}" && -n "${{ inputs.candidate-stable }}" ]]; then
+            echo "release-stable=true" >> $GITHUB_OUTPUT
+          else
+            echo "release-stable=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Validate version format (basic check)
+          if [[ ! "${{ inputs.current-beta }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: current-beta must be in format X.Y.Z"
+            exit 1
+          fi
+          
+          if [[ ! "${{ inputs.candidate-beta }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: candidate-beta must be in format X.Y.Z"
+            exit 1
+          fi
+          
+          if [[ -n "${{ inputs.current-stable }}" && ! "${{ inputs.current-stable }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: current-stable must be in format X.Y.Z"
+            exit 1
+          fi
+          
+          if [[ -n "${{ inputs.candidate-stable }}" && ! "${{ inputs.candidate-stable }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: candidate-stable must be in format X.Y.Z"
+            exit 1
+          fi
+      
+      - name: Check if stable modules have changes
+        id: check-stable
+        if: steps.validate.outputs.release-stable == 'true' && !inputs.skip-stable-check
+        run: |
+          echo "Checking if stable modules have changes since v${{ inputs.current-stable }}..."
+          
+          # Run the check-changes command
+          if make check-changes PREVIOUS_VERSION=v${{ inputs.current-stable }} MODSET=stable; then
+            echo "Stable modules have changes since v${{ inputs.current-stable }}"
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes in stable modules since v${{ inputs.current-stable }}"
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Report validation results
+        run: |
+          echo "::notice::Validation completed successfully"
+          echo "::notice::Release stable: ${{ steps.validate.outputs.release-stable }}"
+          if [[ "${{ steps.validate.outputs.release-stable }}" == "true" ]]; then
+            echo "::notice::Stable has changes: ${{ steps.check-stable.outputs.has-changes }}"
+          fi
+
+  automated-release:
+    needs: validate-inputs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: 1.23.10
+      
+      - name: Setup Git config
+        run: |
+          git config --global user.name "opentelemetrybot"
+          git config --global user.email "107717825+opentelemetrybot@users.noreply.github.com"
+      
+      - name: Run automated release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_BETA: ${{ inputs.current-beta }}
+          CANDIDATE_BETA: ${{ inputs.candidate-beta }}
+          CURRENT_STABLE: ${{ inputs.current-stable }}
+          CANDIDATE_STABLE: ${{ inputs.candidate-stable }}
+          RELEASE_STABLE: ${{ needs.validate-inputs.outputs.release-stable }}
+          STABLE_HAS_CHANGES: ${{ needs.validate-inputs.outputs.stable-has-changes }}
+          SKIP_STABLE_CHECK: ${{ inputs.skip-stable-check }}
+        run: |
+          ./.github/workflows/scripts/automated-release.sh 

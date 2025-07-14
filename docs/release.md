@@ -25,6 +25,37 @@ Before the release, make sure there are no open release blockers in [core](https
 
 ## Releasing opentelemetry-collector
 
+### Automated Release Process (Recommended)
+
+**NEW**: Steps 2-7 can now be automated using the [Automation - Automated Release](https://github.com/open-telemetry/opentelemetry-collector/actions/workflows/automated-release.yml) workflow. This is the recommended approach as it reduces manual errors and ensures consistency.
+
+1. Update Contrib to use the latest in development version of Core by running [Update contrib to the latest core source](https://github.com/open-telemetry/opentelemetry-collector-contrib/actions/workflows/update-otel.yaml). This is to ensure that the latest core does not break contrib in any way. If the job is failing for any reason, you can do it locally by running `make update-otel` in Contrib root directory and pushing a PR. If you are unable to run `make update-otel`, it is possible to skip this step and resolve conflicts with Contrib after Core is released, but this is generally inadvisable.
+   - While this PR is open, all merging in Core is automatically halted via the `Merge freeze / Check` CI check.
+   -  🛑 **Do not move forward until this PR is merged.**
+
+2. **AUTOMATED**: Run the [Automation - Automated Release](https://github.com/open-telemetry/opentelemetry-collector/actions/workflows/automated-release.yml) workflow. When prompted, enter:
+   - **Current beta version**: The current beta version (e.g., `0.127.0`) without the `v` prefix
+   - **New beta version**: The new beta version to release (e.g., `0.128.0`) without the `v` prefix
+   - **Current stable version**: The current stable version (e.g., `1.4.0`) without the `v` prefix (leave empty if not releasing stable)
+   - **New stable version**: The new stable version to release (e.g., `1.5.0`) without the `v` prefix (leave empty if not releasing stable)
+   - **Skip stable check**: Check this box to skip the automatic check for stable module changes (useful for forced stable releases)
+
+   The automated workflow will:
+   - Check if stable modules have changes since the last release
+   - Trigger the prepare-release workflow
+   - Wait for the prepare-release PR to be merged
+   - Push the appropriate tags
+   - Wait for the release branch workflow to complete
+   - Verify the GitHub release was created
+
+   🛑 **Do not move forward until this workflow completes successfully.** 🛑
+
+3. **AUTOMATED**: The automated workflow handles steps 2-7 automatically. If you need to use the manual process instead, see the [Manual Release Process](#manual-release-process) section below.
+
+### Manual Release Process
+
+If you prefer to run the release process manually or if the automated workflow fails, you can follow these steps:
+
 1. Update Contrib to use the latest in development version of Core by running [Update contrib to the latest core source](https://github.com/open-telemetry/opentelemetry-collector-contrib/actions/workflows/update-otel.yaml). This is to ensure that the latest core does not break contrib in any way. If the job is failing for any reason, you can do it locally by running `make update-otel` in Contrib root directory and pushing a PR. If you are unable to run `make update-otel`, it is possible to skip this step and resolve conflicts with Contrib after Core is released, but this is generally inadvisable.
    - While this PR is open, all merging in Core is automatically halted via the `Merge freeze / Check` CI check.
    -  🛑 **Do not move forward until this PR is merged.**
@@ -135,6 +166,30 @@ should share the list of issues that affected the release with the Collector lea
 releases and add new schedules to the bottom of the list.
 
 ## Troubleshooting
+
+### Automated Release Workflow Issues
+
+1. **Automated release workflow times out waiting for PR merge** -- The automated workflow waits up to 1 hour for the prepare-release PR to be merged. If the PR needs manual review or changes, you can:
+   - Make changes to the prepare-release PR directly or via fork
+   - The workflow will automatically detect when the PR is merged and continue
+   - If the timeout is exceeded, you can re-run the workflow or continue with the manual process
+
+2. **Automated release workflow fails to find prepare-release PR** -- If the workflow can't find the PR created by the prepare-release workflow:
+   - Check that the prepare-release workflow completed successfully
+   - Verify that opentelemetrybot created a PR with title starting with "[chore] Prepare release"
+   - If no PR exists, re-run the prepare-release workflow manually
+
+3. **Automated release workflow fails during tag pushing** -- If the automated workflow fails while pushing tags:
+   - Check the workflow logs for specific error messages
+   - Verify that the main branch is clean and the prepare-release commit is at HEAD
+   - You can continue with the manual process from step 4 of the manual release process
+
+4. **Automated release workflow fails waiting for release branch workflow** -- If the release branch workflow doesn't trigger or fails:
+   - Check the [Actions tab](https://github.com/open-telemetry/opentelemetry-collector/actions) for the release branch workflow
+   - Verify that the beta tags were pushed successfully
+   - The release branch workflow should trigger automatically when beta tags are pushed
+
+### General Release Issues
 
 1. `unknown revision internal/coreinternal/v0.85.0` -- This is typically an indication that there's a dependency on a new module. You can fix it by adding a new `replaces` entry to the `go.mod` for the affected module.
 2. `unable to tag modules: unable to load repo config: branch config: invalid merge` when running `make push-tags` -- This is a [known issue](https://github.com/open-telemetry/opentelemetry-go-build-tools/issues/47) with our release tooling, caused by a bug in `go-git`.
